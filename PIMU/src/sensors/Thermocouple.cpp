@@ -12,7 +12,7 @@ bool Thermocouple::connect_to_thermo(int retryDefault)
     int safetyCount = retryDefault;
     while (!thermo.begin(address, &PIMU_WIRE) && safetyCount < RETRY_MAX) 
     {
-        SerialUSB.print("Cannot connect to IMU! Retrying...");
+        SerialUSB.println("Cannot connect to IMU! Retrying...");
         safetyCount++;
         delay(100);
     }
