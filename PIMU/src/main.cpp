@@ -1,6 +1,7 @@
 #include "main.h"
 #include "defines.h"
 #include "sensors/IMU.h"
+#include "sensors/Pressure.h"
 
 /// If the serial did not connect.
 bool faultySerial = false;
@@ -9,8 +10,9 @@ bool faultyIMU = false;
 
 /// The IMU connection.
 IMU imu;
+Pressure pressure = Pressure();
 
-void setup() 
+void setup()
 {
     // Setup serial.
     if (setup_serial()) 
@@ -19,7 +21,17 @@ void setup()
         SerialUSB.println("Connected to the serial.");
     }
     
-    // Setup the IMU.
+    if (pressure.connect_to_sensor()) 
+    {
+        SerialUSB.println("Pressure sensor connected!");
+        pressure.configure_sensor();
+    }
+    else
+    {
+        SerialUSB.println("Pressure not connected. Moving on without pressure :(");
+    }
+    
+    //Setup the IMU.
     if (imu.connect_to_imu())
     {
         SerialUSB.println("IMU connected!!");
@@ -34,6 +46,7 @@ void setup()
 void loop() 
 {
     imu.imu_loop();
+    pressure.sensor_loop();
     delay(LOOP_DELAY);
 }
 
@@ -43,7 +56,7 @@ void loop()
 bool setup_serial() 
 {
     // Try to connect to USB Serial.
-    SerialUSB.begin(BAUD);
+    SerialUSB.begin(BAUD_RATE);
     
     // Prevent an infinate loop by setting an upper bound.
     int safetyCount = 0;
