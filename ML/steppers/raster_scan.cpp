@@ -108,6 +108,20 @@ public:
 // Still need to set up the UART so initializing to not set up
 int TMC2209::uart_fd = -1;
 
+// Placeholder class for the VL53L8CX stuff
+// Needs to be before steppers since Stepper classes both use this.
+void capture_lidar_data(int az_steps, int alt_steps) {
+	// In order for the 8x8 rate (~15Hz), we need ~67ms for 8x8 frame
+	const int SENSOR_PAUSE_US = 67000;
+	const double steps_per_deg = 3200.0 / 360.0;
+	double az_deg = az_steps / steps_per_deg; 
+	double alt_deg = alt_steps / steps_per_deg;
+	
+	std::cout << "[DATA] Azimuth: " << az_deg << " deg | Altitude: " << alt_deg << " deg" << std::endl;
+	
+	usleep(SENSOR_PAUSE_US);
+}
+
 // Class for the steppers; uses the TMC2209 driver class from above
 class Stepper {
 public:
@@ -206,9 +220,21 @@ private:
 	std::chrono::high_resolution_clock::time_point program_start;	
 public:
 	ScanLogger() : program_start(std::chrono::high_resolution_clock::now()){
-		csv_file.open("stepper_test_history.csv", std::ios::app);
-		csv_file << "scan_id,timestamp_ms,duration_ms\n";
+		// Making it so that a new csv is created each time the program runs
+		// Names the new CSV after the time run: easy fix
+		auto now = std::chrono::system_clock::now();
+		auto time_t = std::chrono::system_clock::to_time_t(now);
+		auto tm = *std::localtime(&time_t);
+		
+		std::ostringstream filename;
+		
+		filename << "stepper_test_history__" << std::put_time(&tm, "%Y-%m-%d__%H-%M") << ".csv";
+		
+		csv_file.open(filename.str());
+		csv_file << "scan_id,timestamp_ms,duration_s\n";
 		csv_file.flush();
+		
+		std::cout << "Test data logging to: " << filename.str() << std::endl; 
 	}
 
 	~ScanLogger() {
@@ -223,15 +249,15 @@ public:
 		auto scan_end = std::chrono::high_resolution_clock::now();
 		auto program_elapsed_s = std::chrono::duration_cast<std::chrono::seconds>(scan_end - program_start).count();
 		
-		double scan_duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(scan_end - scan_start_time).count();
+		double scan_duration_s = std::chrono::duration<double>(scan_end - scan_start_time).count();
 
-		scan_times.push_back(scan_duration_ms);
+		scan_times.push_back(scan_duration_s);
 		scan_count++;
 
-		csv_file << scan_count << "," << program_elapsed_s << "," << scan_duration_ms << "\n";
+		csv_file << scan_count << "," << program_elapsed_s << "," << scan_duration_s << "\n";
 		csv_file.flush();
 
-		std::cout << "[LOG] Scan #" << scan_count << " | Duration: " << scan_duration_ms << " ms | Total time: " << program_elapsed_s/1000.0 << "s\n";
+		std::cout << "[LOG] Scan #" << scan_count << " | Duration: " << scan_duration_s << " ms | Total time: " << program_elapsed_s/1000.0 << "s\n";
 	}
 
 	void print_summary() {
@@ -261,39 +287,35 @@ public:
 
 		std::cout << "\n\n[RASTER TEST SUMMARY]" << std::endl;
 		std::cout << "Total scans: " << scan_count << std::endl;
-		std::cout << "Min scan time: " << min_time << "ms" << std::endl;
-		std::cout << "Mean scan time: " << mean_time << "ms" << std::endl;
-		std::cout << "Max scan time: " << max_time  << "ms" << std::endl;
+		std::cout << "Min scan time: " << min_time << "s" << std::endl;
+		std::cout << "Mean scan time: " << mean_time << "s" << std::endl;
+		std::cout << "Max scan time: " << max_time  << "s" << std::endl;
 		std::cout << "Total runtime: " << total_runtime << "s" << std::endl;
 		std::cout << "Scans per min: " << (scan_count * 60.0 / total_runtime) << std::endl;
 	}
 };
 
+// Needs to be global since a ton of functions reference it
+// Needs to be here since signalHandler needs to hook on to it.
 ScanLogger logger;
-
-void signalHandler(int) { 
-	logger.print_summary();
-	exit(0);
-}
-
-void capture_lidar_data(int az_steps, int alt_steps) {
-	// In order for the 8x8 rate (~15Hz), we need ~67ms for 8x8 frame
-	const int SENSOR_PAUSE_US = 67000;
-	const double steps_per_deg = 3200.0 / 360.0;
-	double az_deg = az_steps / steps_per_deg; 
-	double alt_deg = alt_steps / steps_per_deg;
-	
-	std::cout << "[DATA] Azimuth: " << az_deg << " deg | Altitude: " << alt_deg << " deg" << std::endl;
-	
-	usleep(SENSOR_PAUSE_US);
-}
-
 
 // NOTE: If the gimbal only moves 1 step per 15 ms then it'd take 5 hours to do a full raster scan
 // Because the VL53L8CX have a 45 by 45 field of view it's better to (1) move in 45 deg chunks (400 steps); (2) 4-5 movements instead 
 int main() {
-	// Print summary when CNTRL+C'd out
-	signal(SIGINT, signalHandler);
+	// TEMPORARY FIX: 
+	// The code needs to hook onto the pigpio daemon, and I'm tired of having
+	// to turn the daemon off every time I reboot the Pi to run the code.
+	// Later, when we deploy and make the daemon, this should become easier.
+	
+	
+	// Ultimately the daemon needs to manage everything
+	// Since we don't have the daemon, when the pi turns on, the pigpiod daemon makes /var/run/pigpio.pid
+	// so when I run this code, it's unable to access the pid since the pigpiod daemon locks it
+	
+	// So until we make the daemon: We kill the pigpiod daemon in cold blood
+	// DAEMON slayers.
+	system("sudo killall pigpiod");
+	usleep(100000);
 
 	if (gpioInitialise() < 0 || !TMC2209::init_shared_UART("/dev/ttyS0")) {
 		std::cerr << "Pigpio or UART failed; shutting down." << std::endl;
@@ -311,7 +333,10 @@ int main() {
 
 	std::cout << "Beginning chunked LiDAR scan..." << std::endl;
 
-	while (true) {
+	// Just have it do 20 full scans for test purposes
+	int curr_scans = 0;
+	// TODO: figure out if needed to multithread with cameras or how to run together
+	while (curr_scans < 20) {
 		std::cout << "STARTING RASTER CYCLE" << std::endl;
 		
 		auto scan_start = logger.start_scan();
@@ -329,8 +354,10 @@ int main() {
 		// End timing and log duration
 		logger.log_scan(scan_start);
 
-		std::cout << "==============> RASTER COMPLETE" << std::endl;
+		std::cout << "==============> RASTER " << ++curr_scans << " COMPLETE" << std::endl;
 	}
+	
+	logger.print_summary();
 	
 	gpioTerminate();
 	return 0;
