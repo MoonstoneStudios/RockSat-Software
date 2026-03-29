@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
             res[0] = 1280;
             res[1] = 720;
             fps = 30;
-            recLength = 10;
+            recLength = 120;
             
             break;
 
@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
 
     }
 
-    std::this_thread::sleep_for(200ms + recLength * 1s);
+    std::this_thread::sleep_for(200ms + 10 * 1s);
 
     return 0;
 
