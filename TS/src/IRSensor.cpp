@@ -30,7 +30,7 @@ void IRSensor::begin()
     // Read full EEPROM (0x2400..0x272F)
     if (!myIRcam.readEEPROMBlock(0x2400, EEPROM_WORDS, myIRcam.eeData)) {
         Serial.println("EEPROM read failed!");
-        while (1) delay(1000);
+        //while (1) delay(1000);
     }
 
     // Mark bad pixels separately here (row indexes 0...11, col indexes 0..15)
@@ -109,6 +109,7 @@ String IRSensor::ir_loop()
         
         return result;  // Skip this frame
     }
+    LOGGER.println(result);
     delay(SAMPLE_DELAY);  // wait for new reading (adjust to desired sample frequency, see refresh rate table in setRefreshRate() for ranges)
     return result;
 }

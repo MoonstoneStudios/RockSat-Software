@@ -2,7 +2,10 @@
 
 #define RETRY_MAX 256
 // In ms
-#define RETRY_DELAY 100 
+#define RETRY_DELAY 100
+
+// Brando asked.
+#define BRANDO "goated"
 
 void ThermocoupleControl::initializeI2C1(){
 
@@ -25,7 +28,7 @@ void ThermocoupleControl::initializeI2C1(){
   if (Amp1.begin(Address1, &Wire1)){
     ADDR_ONE_CHECK = true;
     Amp1.setADCresolution(MCP9600_ADCRESOLUTION_18);
-    Amp1.setThermocoupleType(MCP9600_TYPE_N);
+    Amp1.setThermocoupleType(MCP9600_TYPE_E);
   }
 
   while (!Amp2.begin(Address2, &Wire1) && debounce < RETRY_MAX){
@@ -39,7 +42,7 @@ void ThermocoupleControl::initializeI2C1(){
   if (Amp2.begin(Address2, &Wire1)){
     ADDR_TWO_CHECK = true;
     Amp2.setADCresolution(MCP9600_ADCRESOLUTION_18);
-    Amp2.setThermocoupleType(MCP9600_TYPE_N);
+    Amp2.setThermocoupleType(MCP9600_TYPE_E);
   }
 
   while (!Amp3.begin(Address3, &Wire1) && debounce < RETRY_MAX){
@@ -53,7 +56,7 @@ void ThermocoupleControl::initializeI2C1(){
   if (Amp3.begin(Address3, &Wire1)){
     ADDR_THREE_CHECK = true;
     Amp3.setADCresolution(MCP9600_ADCRESOLUTION_18);
-    Amp3.setThermocoupleType(MCP9600_TYPE_N);
+    Amp3.setThermocoupleType(MCP9600_TYPE_E);
   }
 
   LOGGER.println("All amplifiers found!");
@@ -77,7 +80,7 @@ void ThermocoupleControl::initializeI2C2(){
   if (Amp4.begin(Address4, &Wire2)){
     ADDR_FOUR_CHECK = true;
     Amp4.setADCresolution(MCP9600_ADCRESOLUTION_18);
-    Amp4.setThermocoupleType(MCP9600_TYPE_N);
+    Amp4.setThermocoupleType(MCP9600_TYPE_E);
   }
 
   while (!Amp5.begin(Address5, &Wire2) && debounce < RETRY_MAX){
@@ -88,7 +91,7 @@ void ThermocoupleControl::initializeI2C2(){
   if (Amp5.begin(Address5, &Wire2)){
     ADDR_FIVE_CHECK = true;
     Amp5.setADCresolution(MCP9600_ADCRESOLUTION_18);
-    Amp5.setThermocoupleType(MCP9600_TYPE_N);
+    Amp5.setThermocoupleType(MCP9600_TYPE_E);
   }
 
   LOGGER.println("All amplifiers found!");
