@@ -20,6 +20,8 @@ ThermocoupleControl thermocoupleController;
 // Initialize the IR sensor
 IRSensor irSensor;
 
+bool ledFlash = false;
+
 // Quickly create the CSV header and write to SD
 void createCSVHeader();
 // Set all pin modes.
@@ -27,7 +29,7 @@ void setupPins();
 
 void setup(){
 	Serial.begin(115000);
-
+    
 	LOGGER.begin(&DualSDManager);
 
 	// Setup all digital and analog pins.
@@ -59,6 +61,7 @@ void loop(){
 	LOGGER.println("Getting thermocouple Data");
 	//gather thermocouple data:
 	String thermocoupleData = thermocoupleController.getThermocoupleData();
+	//String thermocoupleData = "lol";
 
 	LOGGER.println("Getting TE Signal");
 	//check if TE signal is active:

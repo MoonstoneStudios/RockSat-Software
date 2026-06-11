@@ -1,6 +1,7 @@
 #include "Thermocouple_I2C_Control.h"
+#include <string.h>
 
-#define RETRY_MAX 256
+#define RETRY_MAX 10
 // In ms
 #define RETRY_DELAY 100
 
@@ -22,6 +23,8 @@ void ThermocoupleControl::initializeI2C1(){
     LOGGER.println("Amplifier 1 not found!");
     delay(RETRY_DELAY);
   }
+
+    
 
   debounce = 0;
 
@@ -73,9 +76,12 @@ void ThermocoupleControl::initializeI2C2(){
   Wire2.begin();
 
   while (!Amp4.begin(Address4, &Wire2) && debounce < RETRY_MAX){
+    debounce++;
     LOGGER.println("Amplifier 4 not found");
     delay(RETRY_MAX);
   }
+
+  debounce = 0;
 
   if (Amp4.begin(Address4, &Wire2)){
     ADDR_FOUR_CHECK = true;
@@ -84,6 +90,7 @@ void ThermocoupleControl::initializeI2C2(){
   }
 
   while (!Amp5.begin(Address5, &Wire2) && debounce < RETRY_MAX){
+    debounce++;
     LOGGER.println("Amplifier 5 not found!");
     delay(RETRY_DELAY);  
   }
@@ -102,15 +109,15 @@ void ThermocoupleControl::initializeI2C2(){
 String ThermocoupleControl::getHotJunctionString(){
   String hotJunctionString;
 
-  hotJunctionString.append(Amp1.readThermocouple());
+  hotJunctionString.append(ADDR_ONE_CHECK ? String(Amp1.readThermocouple()) : "");
   hotJunctionString.append(",");
-  hotJunctionString.append(Amp2.readThermocouple());
+  hotJunctionString.append(ADDR_TWO_CHECK ? String(Amp2.readThermocouple()) : "");
   hotJunctionString.append(",");
-  hotJunctionString.append(Amp3.readThermocouple());
+  hotJunctionString.append(ADDR_THREE_CHECK ? String(Amp3.readThermocouple()) : "");
   hotJunctionString.append(",");
-  hotJunctionString.append(Amp4.readThermocouple());
+  hotJunctionString.append(ADDR_FOUR_CHECK ? String(Amp4.readThermocouple()) : "");
   hotJunctionString.append(",");
-  hotJunctionString.append(Amp5.readThermocouple());
+  hotJunctionString.append(ADDR_FIVE_CHECK ? String(Amp5.readThermocouple()) : "");
   hotJunctionString.append(",");
 
   return hotJunctionString;
@@ -131,15 +138,15 @@ void ThermocoupleControl::printHotJunctions(){
 String ThermocoupleControl::getColdJunctionString(){
   String coldJunctionString;
 
-  coldJunctionString.append(Amp1.readAmbient());
+  coldJunctionString.append(ADDR_ONE_CHECK ? String(Amp1.readAmbient()) : "");
   coldJunctionString.append(",");
-  coldJunctionString.append(Amp2.readAmbient());
+  coldJunctionString.append(ADDR_TWO_CHECK ? String(Amp2.readAmbient()) : "");
   coldJunctionString.append(",");
-  coldJunctionString.append(Amp3.readAmbient());
+  coldJunctionString.append(ADDR_THREE_CHECK ? String(Amp3.readAmbient()) : "");
   coldJunctionString.append(",");
-  coldJunctionString.append(Amp4.readAmbient());
+  coldJunctionString.append(ADDR_FOUR_CHECK ? String(Amp4.readAmbient()) : "");
   coldJunctionString.append(",");
-  coldJunctionString.append(Amp5.readAmbient());
+  coldJunctionString.append(ADDR_FIVE_CHECK ? String(Amp5.readAmbient()) : "");
   coldJunctionString.append(",");
 
   return coldJunctionString;
@@ -160,15 +167,15 @@ void ThermocoupleControl::printColdJunctions(){
 String ThermocoupleControl::getADC(){
   String ADC;
 
-  ADC.append(Amp1.readADC());
+  ADC.append(ADDR_ONE_CHECK ? String(Amp1.readADC()) : "");
   ADC.append(",");
-  ADC.append(Amp2.readADC());
+  ADC.append(ADDR_TWO_CHECK ? String(Amp2.readADC()) : "");
   ADC.append(",");
-  ADC.append(Amp3.readADC());
+  ADC.append(ADDR_THREE_CHECK ? String(Amp3.readADC()) : "");
   ADC.append(",");
-  ADC.append(Amp4.readADC());
+  ADC.append(ADDR_FOUR_CHECK ? String(Amp4.readADC()) : "");
   ADC.append(",");
-  ADC.append(Amp5.readADC());
+  ADC.append(ADDR_FIVE_CHECK ? String(Amp5.readADC()) : "");
   ADC.append(",");
 
   return ADC;

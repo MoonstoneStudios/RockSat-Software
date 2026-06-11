@@ -20,7 +20,7 @@ public:
 
     const uint8_t Address1 = 0x66; //J1
     const uint8_t Address2 = 0x65; //J2
-    const uint8_t Address3 = 0x65; //No Jump
+    const uint8_t Address3 = 0x67; //No Jump
 
     //Amplifiers on I2C Bus 2:
     Adafruit_MCP9600 Amp4;
